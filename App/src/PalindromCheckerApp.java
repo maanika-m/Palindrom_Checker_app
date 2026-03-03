@@ -3,96 +3,119 @@ import java.util.Stack;
 import java.util.Deque;
 import java.util.LinkedList;
 
-// Main class
 public class PalindromCheckerApp {
 
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
 
-        // Prompt user for input
-        System.out.print("Enter a string to check if it is a palindrome: ");
+        // Input string
+        System.out.print("Enter a string to check palindrome performance: ");
         String input = scanner.nextLine();
 
-        // Choose strategy
-        System.out.println("Choose Palindrome Strategy:");
-        System.out.println("1. Stack-based");
-        System.out.println("2. Deque-based");
-        System.out.print("Enter choice (1 or 2): ");
-        int choice = scanner.nextInt();
+        // --- UC3: String Reverse ---
+        long startTime = System.nanoTime();
+        boolean uc3 = checkPalindromeReverse(input);
+        long endTime = System.nanoTime();
+        System.out.println("UC3 (String Reverse): " + uc3 + " | Time: " + (endTime - startTime) + " ns");
 
-        PalindromeStrategy strategy;
+        // --- UC4: Character Array ---
+        startTime = System.nanoTime();
+        boolean uc4 = checkPalindromeCharArray(input);
+        endTime = System.nanoTime();
+        System.out.println("UC4 (Char Array Two-Pointer): " + uc4 + " | Time: " + (endTime - startTime) + " ns");
 
-        if (choice == 1) {
-            strategy = new StackStrategy();
-        } else if (choice == 2) {
-            strategy = new DequeStrategy();
-        } else {
-            System.out.println("Invalid choice. Defaulting to Stack strategy.");
-            strategy = new StackStrategy();
-        }
+        // --- UC5: Stack ---
+        startTime = System.nanoTime();
+        boolean uc5 = checkPalindromeStack(input);
+        endTime = System.nanoTime();
+        System.out.println("UC5 (Stack): " + uc5 + " | Time: " + (endTime - startTime) + " ns");
 
-        // Inject strategy and check palindrome
-        PalindromeService service = new PalindromeService(strategy);
-        boolean isPalindrome = service.check(input);
+        // --- UC6: Queue + Stack ---
+        startTime = System.nanoTime();
+        boolean uc6 = checkPalindromeQueueStack(input);
+        endTime = System.nanoTime();
+        System.out.println("UC6 (Queue + Stack): " + uc6 + " | Time: " + (endTime - startTime) + " ns");
 
-        // Display result
-        if (isPalindrome) {
-            System.out.println("Result: The given string is a Palindrome (Strategy Pattern).");
-        } else {
-            System.out.println("Result: The given string is NOT a Palindrome (Strategy Pattern).");
-        }
+        // --- UC7: Deque ---
+        startTime = System.nanoTime();
+        boolean uc7 = checkPalindromeDeque(input);
+        endTime = System.nanoTime();
+        System.out.println("UC7 (Deque): " + uc7 + " | Time: " + (endTime - startTime) + " ns");
+
+        // --- UC10: Case-insensitive & spaces ignored ---
+        startTime = System.nanoTime();
+        boolean uc10 = checkPalindromeNormalized(input);
+        endTime = System.nanoTime();
+        System.out.println("UC10 (Normalized Case/Spaces): " + uc10 + " | Time: " + (endTime - startTime) + " ns");
 
         scanner.close();
     }
-}
 
-// Strategy Interface
-interface PalindromeStrategy {
-    boolean isPalindrome(String str);
-}
+    // UC3: Reverse string
+    private static boolean checkPalindromeReverse(String str) {
+        String reversed = "";
+        for (int i = str.length() - 1; i >= 0; i--) {
+            reversed += str.charAt(i);
+        }
+        return str.equals(reversed);
+    }
 
-// Stack-based strategy
-class StackStrategy implements PalindromeStrategy {
-    public boolean isPalindrome(String str) {
+    // UC4: Char array two-pointer
+    private static boolean checkPalindromeCharArray(String str) {
+        char[] chars = str.toCharArray();
+        int start = 0, end = chars.length - 1;
+        while (start < end) {
+            if (chars[start] != chars[end]) return false;
+            start++;
+            end--;
+        }
+        return true;
+    }
+
+    // UC5: Stack
+    private static boolean checkPalindromeStack(String str) {
+        Stack<Character> stack = new Stack<>();
+        for (int i = 0; i < str.length(); i++) stack.push(str.charAt(i));
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) != stack.pop()) return false;
+        }
+        return true;
+    }
+
+    // UC6: Queue + Stack
+    private static boolean checkPalindromeQueueStack(String str) {
+        Deque<Character> queue = new LinkedList<>();
         Stack<Character> stack = new Stack<>();
         for (int i = 0; i < str.length(); i++) {
+            queue.addLast(str.charAt(i));
             stack.push(str.charAt(i));
         }
-        for (int i = 0; i < str.length(); i++) {
-            if (str.charAt(i) != stack.pop()) {
-                return false;
-            }
+        while (!queue.isEmpty()) {
+            if (queue.removeFirst() != stack.pop()) return false;
         }
         return true;
     }
-}
 
-// Deque-based strategy
-class DequeStrategy implements PalindromeStrategy {
-    public boolean isPalindrome(String str) {
+    // UC7: Deque
+    private static boolean checkPalindromeDeque(String str) {
         Deque<Character> deque = new LinkedList<>();
-        for (int i = 0; i < str.length(); i++) {
-            deque.addLast(str.charAt(i));
-        }
+        for (int i = 0; i < str.length(); i++) deque.addLast(str.charAt(i));
         while (deque.size() > 1) {
-            if (deque.removeFirst() != deque.removeLast()) {
-                return false;
-            }
+            if (deque.removeFirst() != deque.removeLast()) return false;
         }
         return true;
     }
-}
 
-// PalindromeService that injects strategy
-class PalindromeService {
-    private PalindromeStrategy strategy;
-
-    public PalindromeService(PalindromeStrategy strategy) {
-        this.strategy = strategy;
-    }
-
-    public boolean check(String str) {
-        return strategy.isPalindrome(str);
+    // UC10: Normalized (case-insensitive, spaces ignored)
+    private static boolean checkPalindromeNormalized(String str) {
+        String normalized = str.replaceAll("\\s+", "").toLowerCase();
+        int start = 0, end = normalized.length() - 1;
+        while (start < end) {
+            if (normalized.charAt(start) != normalized.charAt(end)) return false;
+            start++;
+            end--;
+        }
+        return true;
     }
 }
